@@ -28,7 +28,6 @@ jobs:
       - name: Install dependencies and pmbootstrap
         run: |
           sudo apt-get update
-          # Добавлен expect для надежного интерактивного ввода
           sudo apt-get install -y python3 python3-pip git openssl rustc cargo expect
           python3 -m pip install --upgrade pip setuptools
           pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap
@@ -39,50 +38,18 @@ jobs:
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
           
-          # Создаем expect-скрипт, который реагирует на ключевые слова в вопросах
           cat << 'EOF' > /tmp/init_pmos.exp
           #!/usr/bin/expect -f
-          set timeout 600
-          spawn pmbootstrap init
+          set timeout 900
+          spawn pmbootstrap --details-to-stdout init
           
+          # Ждем именно промптов с квадратными скобками, чтобы не сработать на инфо-текст
           expect {
-            "Work path" { send "\r"; exp_continue }
-            "pmaports path" { send "\r"; exp_continue }
-            "Channel" { send "\r"; exp_continue }
-            "Vendor" { send "xiaomi\r"; exp_continue }
-            "Device codename" { send "rosemary-downstream\r"; exp_continue }
+            -re "Work path \[.*\]: " { send "\r"; exp_continue }
+            -re "pmaports path \[.*\]: " { send "\r"; exp_continue }
+            -re "Channel \[.*\]: " { send "\r"; exp_continue }
+            -re "Vendor \[.*\]: " { send "xiaomi\r"; exp_continue }
+            -re "Device codename \[.*\]: " { send "rosemary-downstream\r"; exp_continue }
             "Continue? (y/n)" { send "y\r"; exp_continue }
-            "Kernel" { send "\r"; exp_continue }
-            "Username" { send "\r"; exp_continue }
-            "Provider" { send "\r"; exp_continue }
-            "User interface" { send "\r"; exp_continue }
-            "Which service manager" { send "openrc\r"; exp_continue }
-            "Change them?" { send "n\r"; exp_continue }
-            "Extra packages" { send "\r"; exp_continue }
-            "Use this timezone" { send "y\r"; exp_continue }
-            "Locale" { send "\r"; exp_continue }
-            "SSH" { send "n\r"; exp_continue }
-            "ERROR" { exit 1 }
-            eof
-          }
-          EOF
-          chmod +x /tmp/init_pmos.exp
-          /tmp/init_pmos.exp
-
-      - name: Build rootfs (pmbootstrap install)
-        run: |
-          # Передаем пароль 147147 дважды (ввод и подтверждение)
-          printf '147147\n147147\n' | pmbootstrap install
-
-      - name: Zip build artifacts
-        run: |
-          cd ~/.local/var/pmbootstrap
-          zip -r ~/pmos-rosemary-build.zip chroot_rootfs_xiaomi-rosemary chroot_native/boot
-
-      - name: Upload artifact for download
-        uses: actions/upload-artifact@v4
-        with:
-          name: pmos-rosemary-downstream-build
-          path: ~/pmos-rosemary-build.zip
-          retention-days: 14
-          compression-level: 0
+            -re "Kernel \[.*\]: " { send "\r"; exp_continue }
+            -re "Username \
