@@ -14,7 +14,7 @@ jobs:
             binfmt-support qemu-user-static android-tools-fastboot
 
       - name: Clone pmbootstrap
-        run: git clone --depth=1 https://gitlab.com/postmarketOS/pmbootstrap.git
+        run: git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
 
       - name: Write non-interactive config
         run: |
@@ -36,9 +36,6 @@ jobs:
       - name: Init pmbootstrap
         working-directory: pmbootstrap
         run: sudo ./pmbootstrap.py -q init || true
-        # || true на случай что часть вопросов всё равно вылезет —
-        # смотри лог шага, если упадёт на конкретном вопросе, добавим
-        # его в конфиг явно (см. ниже "если не сработает")
 
       - name: Build rootfs + kernel
         working-directory: pmbootstrap
