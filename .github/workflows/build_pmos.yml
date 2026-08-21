@@ -43,9 +43,9 @@ jobs:
         run: |
           cat << 'EOF' > /tmp/init_pmos.exp
           #!/usr/bin/expect -f
-          set timeout 900
+          set timeout 3600
           log_user 1
-          spawn pmbootstrap --details-to-stdout init
+          spawn pmbootstrap -t 3600 --details-to-stdout init --shallow-initial-clone
           expect {
             -re {Vendor.*:\s*$}          { send "xiaomi\r"; exp_continue }
             -re {Device codename.*:\s*$} { send "rosemary-downstream\r"; exp_continue }
@@ -61,7 +61,7 @@ jobs:
         run: pmbootstrap status
 
       - name: Build rootfs + kernel
-        run: pmbootstrap -y install
+        run: pmbootstrap -t 3600 -y install
 
       - name: Export images
         run: pmbootstrap export
