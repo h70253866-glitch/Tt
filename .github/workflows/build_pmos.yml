@@ -47,11 +47,11 @@ jobs:
           log_user 1
           spawn pmbootstrap --details-to-stdout init
           expect {
-            -re "Vendor.*:\\s*$"           { send "xiaomi\r"; exp_continue }
-            -re "Device codename.*:\\s*$"  { send "rosemary-downstream\r"; exp_continue }
-            -re "User interface.*:\\s*$"   { send "console\r"; exp_continue }
-            -re "\\(y/n\\).*:\\s*$"        { send "\r"; exp_continue }
-            -re "\\[.*\\]:\\s*$"           { send "\r"; exp_continue }
+            -re {Vendor.*:\s*$}          { send "xiaomi\r"; exp_continue }
+            -re {Device codename.*:\s*$} { send "rosemary-downstream\r"; exp_continue }
+            -re {User interface.*:\s*$}  { send "console\r"; exp_continue }
+            -re {\(y/n\).*:\s*$}         { send "\r"; exp_continue }
+            -re {\[.*\]:\s*$}            { send "\r"; exp_continue }
             eof
           }
           EOF
