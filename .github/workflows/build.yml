@@ -11,41 +11,37 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git python3 python3-pip \
-            binfmt-support qemu-user-static android-tools-fastboot expect
+            binfmt-support qemu-user-static android-tools-fastboot
 
       - name: Clone pmbootstrap
         run: git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
 
-      - name: Init pmbootstrap (expect-driven)
-        working-directory: pmbootstrap
-        run: |
-          cat > /tmp/init.exp << 'EOF'
-          set timeout 120
-          spawn ./pmbootstrap.py init
-          expect {
-            "vendor" { send "xiaomi\r"; exp_continue }
-            "device" { send "rosemary-downstream\r"; exp_continue }
-            "Enter number" { send "\r"; exp_continue }
-            "systemd" { send "n\r"; exp_continue }
-            "user interface" { send "console\r"; exp_continue }
-            "extra packages" { send "\r"; exp_continue }
-            "hostname" { send "pmos-rosemary\r"; exp_continue }
-            "keymap" { send "\r"; exp_continue }
-            "timezone" { send "\r"; exp_continue }
-            eof
-          }
-          EOF
-          expect -d /tmp/init.exp
+      - name: Clone pmaports
+        run: git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmaports.git ~/pmaports
 
-      - name: Verify pmaports cloned
+      - name: Configure pmbootstrap (no interactive init)
         working-directory: pmbootstrap
         run: |
-          ls -la ~/.local/var/pmbootstrap/cache_git/pmaports || \
-          (echo "pmaports missing, init failed" && exit 1)
+          ./pmbootstrap.py config aports ~/pmaports
+          ./pmbootstrap.py config work /tmp/pmbootstrap-work
+          ./pmbootstrap.py config device rosemary-downstream
+          ./pmbootstrap.py config ui console
+          ./pmbootstrap.py config ui_extras False
+          ./pmbootstrap.py config service_manager openrc
+          ./pmbootstrap.py config hostname pmos-rosemary
+          ./pmbootstrap.py config user user
+          ./pmbootstrap.py config keymap us
+          ./pmbootstrap.py config locale en_US.UTF-8
+          ./pmbootstrap.py config timezone UTC
+          ./pmbootstrap.py config jobs 4
+
+      - name: Verify config
+        working-directory: pmbootstrap
+        run: ./pmbootstrap.py status
 
       - name: Build rootfs + kernel
         working-directory: pmbootstrap
-        run: ./pmbootstrap.py install
+        run: ./pmbootstrap.py -y install
 
       - name: Export images
         working-directory: pmbootstrap
