@@ -38,29 +38,13 @@ jobs:
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
           
-          # Точный порядок ответов на основе логов:
-          # 1. \n (Work path)
-          # 2. \n (pmaports path)
-          # 3. \n (Channel edge)
-          # 4. xiaomi (Vendor)
-          # 5. rosemary-downstream (Device)
-          # 6. y (Continue with archived device)
-          # 7. \n (Username)
-          # 8-10. \n (Providers x3)
-          # 11. \n (UI: console)
-          # 12. openrc (Service manager - ИМЕННО ТАК ОТКЛЮЧАЕМ SYSTEMD!)
-          # 13. n (Change them? 1)
-          # 14. n (Change them? 2)
-          # 15. \n (Extra packages)
-          # 16. y (Timezone)
-          # 17. \n (Locale)
-          # 18. y (Final Continue)
-          # 19. n (SSH keys)
+          # Точный порядок ответов (см. предыдущие логи)
           printf '\n\n\nxiaomi\nrosemary-downstream\ny\n\n\n\n\n\nopenrc\nn\nn\n\ny\n\ny\nn\n\n\n\n\n' | pmbootstrap init
 
       - name: Build rootfs (pmbootstrap install)
         run: |
-          pmbootstrap install
+          # Передаем пароль 147147 дважды (ввод и подтверждение)
+          printf '147147\n147147\n' | pmbootstrap install
 
       - name: Zip build artifacts
         run: |
