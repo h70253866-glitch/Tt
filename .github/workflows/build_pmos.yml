@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies and pmbootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip git openssl rustc cargo \
+          sudo apt-get install -y python3 python3-pip git openssl rustc cargo expect \
             binfmt-support qemu-user-static android-tools-fastboot
           python3 -m pip install --upgrade pip setuptools
           pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap
@@ -39,23 +39,23 @@ jobs:
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
 
-      - name: Clone pmaports
-        run: git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmaports.git ~/pmaports
-
-      - name: Configure pmbootstrap (no interactive init)
+      - name: Initialize pmbootstrap (generic expect)
         run: |
-          pmbootstrap config aports ~/pmaports
-          pmbootstrap config work /tmp/pmbootstrap-work
-          pmbootstrap config device rosemary-downstream
-          pmbootstrap config ui console
-          pmbootstrap config ui_extras False
-          pmbootstrap config service_manager openrc
-          pmbootstrap config hostname pmos-rosemary
-          pmbootstrap config user user
-          pmbootstrap config keymap us
-          pmbootstrap config locale en_US.UTF-8
-          pmbootstrap config timezone UTC
-          pmbootstrap config jobs 4
+          cat << 'EOF' > /tmp/init_pmos.exp
+          #!/usr/bin/expect -f
+          set timeout 900
+          log_user 1
+          spawn pmbootstrap --details-to-stdout init
+          expect {
+            -re "Vendor.*:\\s*$"           { send "xiaomi\r"; exp_continue }
+            -re "Device codename.*:\\s*$"  { send "rosemary-downstream\r"; exp_continue }
+            -re "User interface.*:\\s*$"   { send "console\r"; exp_continue }
+            -re "\\(y/n\\).*:\\s*$"        { send "\r"; exp_continue }
+            -re "\\[.*\\]:\\s*$"           { send "\r"; exp_continue }
+            eof
+          }
+          EOF
+          expect -d /tmp/init_pmos.exp
 
       - name: Verify config
         run: pmbootstrap status
