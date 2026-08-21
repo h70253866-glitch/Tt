@@ -34,18 +34,14 @@ jobs:
 
       - name: Initialize pmbootstrap
         run: |
-          # Настраиваем git для предотвращения обрывов сети при клонировании
+          # Настраиваем git для предотвращения обрывов сети
           git config --global http.postBuffer 1048576000
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
           
-          # Правильный порядок ответов:
-          # 1. Пустая строка (Work path - используем дефолт)
-          # 2. Пустая строка (pmaports path - используем дефолт)
-          # 3. xiaomi (вендор)
-          # 4. rosemary-downstream (устройство)
-          # 5+ Остальные пустые строки для применения дефолтов (UI, юзер и т.д.)
-          printf '\n\nxiaomi\nrosemary-downstream\n\n\n\n\n\n\n\nn\n' | pmbootstrap init
+          # Генерируем ответы: 3 пустых (пути + канал), затем xiaomi, rosemary-downstream,
+          # затем 50 пустых строк для остальных дефолтов, и в конце 'n' для SSH ключей
+          (printf '\n\n\nxiaomi\nrosemary-downstream\n'; for i in {1..50}; do printf '\n'; done; printf 'n\n') | pmbootstrap init
 
       - name: Build rootfs (pmbootstrap install)
         run: |
