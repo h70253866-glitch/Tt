@@ -45,13 +45,15 @@ jobs:
           #!/usr/bin/expect -f
           set timeout 3600
           log_user 1
+          set env(NO_COLOR) 1
+          set env(TERM) dumb
           spawn pmbootstrap -t 3600 --details-to-stdout init --shallow-initial-clone
           expect {
             -re {Vendor.*:\s*$}          { send "xiaomi\r"; exp_continue }
             -re {Device codename.*:\s*$} { send "rosemary-downstream\r"; exp_continue }
             -re {User interface.*:\s*$}  { send "console\r"; exp_continue }
             -re {\(y/n\).*:\s*$}         { send "\r"; exp_continue }
-            -re {\[.*\]:\s*$}            { send "\r"; exp_continue }
+            -re {\].*:\s*$}              { send "\r"; exp_continue }
             eof
           }
           EOF
