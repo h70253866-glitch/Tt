@@ -28,18 +28,46 @@ jobs:
       - name: Install dependencies and pmbootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip git openssl rustc cargo
+          # Добавлен expect для надежного интерактивного ввода
+          sudo apt-get install -y python3 python3-pip git openssl rustc cargo expect
           python3 -m pip install --upgrade pip setuptools
           pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap
 
-      - name: Initialize pmbootstrap
+      - name: Initialize pmbootstrap (using expect)
         run: |
           git config --global http.postBuffer 1048576000
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
           
-          # Точный порядок ответов (см. предыдущие логи)
-          printf '\n\n\nxiaomi\nrosemary-downstream\ny\n\n\n\n\n\nopenrc\nn\nn\n\ny\n\ny\nn\n\n\n\n\n' | pmbootstrap init
+          # Создаем expect-скрипт, который реагирует на ключевые слова в вопросах
+          cat << 'EOF' > /tmp/init_pmos.exp
+          #!/usr/bin/expect -f
+          set timeout 600
+          spawn pmbootstrap init
+          
+          expect {
+            "Work path" { send "\r"; exp_continue }
+            "pmaports path" { send "\r"; exp_continue }
+            "Channel" { send "\r"; exp_continue }
+            "Vendor" { send "xiaomi\r"; exp_continue }
+            "Device codename" { send "rosemary-downstream\r"; exp_continue }
+            "Continue? (y/n)" { send "y\r"; exp_continue }
+            "Kernel" { send "\r"; exp_continue }
+            "Username" { send "\r"; exp_continue }
+            "Provider" { send "\r"; exp_continue }
+            "User interface" { send "\r"; exp_continue }
+            "Which service manager" { send "openrc\r"; exp_continue }
+            "Change them?" { send "n\r"; exp_continue }
+            "Extra packages" { send "\r"; exp_continue }
+            "Use this timezone" { send "y\r"; exp_continue }
+            "Locale" { send "\r"; exp_continue }
+            "SSH" { send "n\r"; exp_continue }
+            "ERROR" { exit 1 }
+            eof
+          }
+          EOF
+          chmod +x /tmp/init_pmos.exp
+          /tmp/init_pmos.exp
 
       - name: Build rootfs (pmbootstrap install)
         run: |
