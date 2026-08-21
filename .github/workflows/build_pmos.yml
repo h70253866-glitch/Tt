@@ -30,12 +30,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip git openssl rustc cargo
           python3 -m pip install --upgrade pip setuptools
-          # Установка с нового GitLab
           pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap
 
       - name: Initialize pmbootstrap
         run: |
-          printf 'xiaomi\nrosemary-downstream\n\n\n\n\n\n\ny\n' | pmbootstrap init
+          # Настраиваем git для предотвращения обрывов сети при клонировании
+          git config --global http.postBuffer 1048576000
+          git config --global http.lowSpeedLimit 0
+          git config --global http.lowSpeedTime 999999
+          
+          # Правильный порядок ответов:
+          # 1. Пустая строка (Work path - используем дефолт)
+          # 2. Пустая строка (pmaports path - используем дефолт)
+          # 3. xiaomi (вендор)
+          # 4. rosemary-downstream (устройство)
+          # 5+ Остальные пустые строки для применения дефолтов (UI, юзер и т.д.)
+          printf '\n\nxiaomi\nrosemary-downstream\n\n\n\n\n\n\n\nn\n' | pmbootstrap init
 
       - name: Build rootfs (pmbootstrap install)
         run: |
