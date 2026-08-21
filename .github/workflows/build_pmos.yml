@@ -1,0 +1,53 @@
+name: Build postmarketOS (rosemary)
+
+on:
+  workflow_dispatch: # Позволяет запускать сборку вручную
+  push:
+    branches:
+      - main # Запускать при пуше в ветку main (можно убрать, если не нужно)
+
+jobs:
+  build-pmos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Maximize disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-pip git openssl rustc cargo
+          pip3 install pmbootstrap
+
+      - name: Initialize pmbootstrap
+        run: |
+          # Передаем ответы в интерактивный скрипт инициализации
+          # 1. xiaomi (вендор)
+          # 2. rosemary-downstream (устройство)
+          # 3-7. Пустые строки (соглашаемся на дефолтные настройки, НЕ systemd)
+          # 8. y (продолжить)
+          printf 'xiaomi\nrosemary-downstream\n\n\n\n\n\n\ny\n' | pmbootstrap init
+
+      - name: Build rootfs (pmbootstrap install)
+        run: |
+          pmbootstrap install
+
+      - name: Zip build artifacts
+        run: |
+          # Архивируем собранные образы ядра и rootfs
+          cd ~/.local/var/pmbootstrap
+          zip -r ~/pmos-rosemary-build.zip chroot_rootfs_xiaomi-rosemary chroot_native/boot
+
+      - name: Upload artifact for download
+        uses: actions/upload-artifact@v3
+        with:
+          name: pmos-rosemary-downstream-build
+          path: ~/pmos-rosemary-build.zip
+          retention-days: 14 # Файл будет храниться 14 дней
