@@ -51,9 +51,10 @@ jobs:
           expect {
             -re {Vendor.*:\s*$}          { send "xiaomi\r"; exp_continue }
             -re {Device codename.*:\s*$} { send "rosemary-downstream\r"; exp_continue }
+            -re {Type\?\s*\(mainline/downstream\):\s*$} { send "downstream\r"; exp_continue }
             -re {User interface.*:\s*$}  { send "console\r"; exp_continue }
             -re {\(y/n\).*:\s*$}         { send "\r"; exp_continue }
-            -re {\].*:\s*$}              { send "\r"; exp_continue }
+            -re {\]:\s*$}                { send "\r"; exp_continue }
             eof
           }
           EOF
