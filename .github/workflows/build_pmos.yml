@@ -28,28 +28,46 @@ jobs:
       - name: Install dependencies and pmbootstrap
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3 python3-pip git openssl rustc cargo expect
+          sudo apt-get install -y python3 python3-pip git openssl rustc cargo \
+            binfmt-support qemu-user-static android-tools-fastboot
           python3 -m pip install --upgrade pip setuptools
           pip3 install git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap
 
-      - name: Initialize pmbootstrap (using expect)
+      - name: Git tuning for large clones
         run: |
           git config --global http.postBuffer 1048576000
           git config --global http.lowSpeedLimit 0
           git config --global http.lowSpeedTime 999999
-          
-          cat << 'EOF' > /tmp/init_pmos.exp
-          #!/usr/bin/expect -f
-          set timeout 900
-          spawn pmbootstrap --details-to-stdout init
-          
-          # Ждем именно промптов с квадратными скобками, чтобы не сработать на инфо-текст
-          expect {
-            -re "Work path \[.*\]: " { send "\r"; exp_continue }
-            -re "pmaports path \[.*\]: " { send "\r"; exp_continue }
-            -re "Channel \[.*\]: " { send "\r"; exp_continue }
-            -re "Vendor \[.*\]: " { send "xiaomi\r"; exp_continue }
-            -re "Device codename \[.*\]: " { send "rosemary-downstream\r"; exp_continue }
-            "Continue? (y/n)" { send "y\r"; exp_continue }
-            -re "Kernel \[.*\]: " { send "\r"; exp_continue }
-            -re "Username \
+
+      - name: Clone pmaports
+        run: git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmaports.git ~/pmaports
+
+      - name: Configure pmbootstrap (no interactive init)
+        run: |
+          pmbootstrap config aports ~/pmaports
+          pmbootstrap config work /tmp/pmbootstrap-work
+          pmbootstrap config device rosemary-downstream
+          pmbootstrap config ui console
+          pmbootstrap config ui_extras False
+          pmbootstrap config service_manager openrc
+          pmbootstrap config hostname pmos-rosemary
+          pmbootstrap config user user
+          pmbootstrap config keymap us
+          pmbootstrap config locale en_US.UTF-8
+          pmbootstrap config timezone UTC
+          pmbootstrap config jobs 4
+
+      - name: Verify config
+        run: pmbootstrap status
+
+      - name: Build rootfs + kernel
+        run: pmbootstrap -y install
+
+      - name: Export images
+        run: pmbootstrap export
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rosemary-pmos-image
+          path: /tmp/postmarketOS-export/*
