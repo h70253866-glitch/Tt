@@ -20,11 +20,19 @@ jobs:
           sudo apt-get clean
           df -h
 
-      - name: Install dependencies
+      - name: Set up Python 3.11+  # Требуется для tomllib
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies and pmbootstrap
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip git openssl rustc cargo
-          pip3 install pmbootstrap
+          # Обновляем pip и setuptools
+          python3 -m pip install --upgrade pip setuptools
+          # Устанавливаем pmbootstrap напрямую из Git
+          pip3 install git+https://gitlab.com/postmarketOS/pmbootstrap
 
       - name: Initialize pmbootstrap
         run: |
@@ -40,9 +48,9 @@ jobs:
           zip -r ~/pmos-rosemary-build.zip chroot_rootfs_xiaomi-rosemary chroot_native/boot
 
       - name: Upload artifact for download
-        uses: actions/upload-artifact@v4  # Обновленная версия
+        uses: actions/upload-artifact@v4
         with:
           name: pmos-rosemary-downstream-build
           path: ~/pmos-rosemary-build.zip
           retention-days: 14
-          compression-level: 0  # Опционально, для больших файлов
+          compression-level: 0
