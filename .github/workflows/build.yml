@@ -1,0 +1,38 @@
+name: build-pmos
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3 python3-pip sudo \
+            binfmt-support qemu-user-static
+
+      - name: Clone pmbootstrap
+        run: git clone --depth=1 https://gitlab.com/postmarketOS/pmbootstrap.git
+
+      - name: Init pmbootstrap (non-interactive)
+        working-directory: pmbootstrap
+        run: |
+          yes "" | sudo ./pmbootstrap.py init || true
+          # если non-interactive не сработает - разберём отдельно,
+          # там есть флаги --vendor --codename --ui и т.д.
+
+      - name: Build
+        working-directory: pmbootstrap
+        run: sudo ./pmbootstrap.py install
+
+      - name: Export
+        working-directory: pmbootstrap
+        run: sudo ./pmbootstrap.py export
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pmos-image
+          path: /tmp/postmarketOS-export/*
